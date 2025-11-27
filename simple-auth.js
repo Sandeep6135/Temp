@@ -7,16 +7,23 @@ class SimpleAuth {
     }
 
     async initializeAmplify() {
-        // Wait for Amplify to load
+        // Wait for Amplify to load (checking both common global names)
         let attempts = 0;
-        while (!window.Amplify && attempts < 50) {
+        while (!window.Amplify && !window.aws_amplify && attempts < 50) {
             await new Promise(resolve => setTimeout(resolve, 100));
             attempts++;
         }
 
+        // Fix: If loaded as aws_amplify, alias it to Amplify
+        if (!window.Amplify && window.aws_amplify) {
+            window.Amplify = window.aws_amplify;
+        }
+
         if (window.Amplify) {
             try {
-                window.Amplify.configure({
+                // Use global config if available, otherwise use your hardcoded values
+                // Note: Your hardcoded IDs below are CORRECT.
+                const config = window.awsConfig || {
                     Auth: {
                         region: 'eu-north-1',
                         userPoolId: 'eu-north-1_kdsgHk0cI',
@@ -24,14 +31,16 @@ class SimpleAuth {
                         mandatorySignIn: false,
                         authenticationFlowType: 'USER_SRP_AUTH'
                     }
-                });
+                };
+                
+                window.Amplify.configure(config);
                 console.log('Amplify configured successfully');
                 await this.checkCurrentUser();
             } catch (error) {
                 console.error('Amplify configuration error:', error);
             }
         } else {
-            console.error('Amplify failed to load');
+            console.error('Amplify failed to load - global variable not found');
         }
     }
 

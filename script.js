@@ -452,7 +452,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Dashboard button functionality
         const dashboardButtons = document.querySelectorAll('.dashboard-btn');
         dashboardButtons.forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', async function() {
                 try {
                     const cardTitle = this.parentElement.querySelector('h3')?.textContent;
                     
@@ -497,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Service button functionality
         const serviceButtons = document.querySelectorAll('.service-btn');
         serviceButtons.forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', async function() {
                 try {
                     const serviceTitle = this.parentElement.querySelector('h3')?.textContent;
                     const servicePrice = this.parentElement.querySelector('.service-price')?.textContent;

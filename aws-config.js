@@ -1,9 +1,9 @@
 // AWS Amplify Configuration
 const awsConfig = {
     Auth: {
-        region: 'eu-north-1',
-        userPoolId: 'eu-north-1_kdsgHk0cI',
-        userPoolWebClientId: '5lnhh5rqepl5uvq41akuvdhil3',
+        region: 'us-west-1',
+        userPoolId: 'us-west-1_LzVexyAYn',
+        userPoolWebClientId: '5rsf2v5fh45kjunhfmon4eav6g',
         mandatorySignIn: false,
         authenticationFlowType: 'USER_SRP_AUTH'
     }
