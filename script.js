@@ -1,3 +1,88 @@
+// Toast Notification System
+class ToastManager {
+    constructor() {
+        this.container = null;
+        this.init();
+    }
+    
+    init() {
+        this.container = document.createElement('div');
+        this.container.className = 'toast-container';
+        document.body.appendChild(this.container);
+    }
+    
+    show(message, type = 'info', duration = 4000) {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const icon = this.getIcon(type);
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'toast-close';
+        closeBtn.innerHTML = '×';
+        closeBtn.setAttribute('aria-label', 'Close notification');
+        
+        toast.innerHTML = `
+            <span class="toast-icon">${icon}</span>
+            <span class="toast-message"></span>
+        `;
+        
+        // Safely set message content
+        const messageSpan = toast.querySelector('.toast-message');
+        messageSpan.textContent = message;
+        
+        toast.appendChild(closeBtn);
+        this.container.appendChild(toast);
+        
+        // Trigger haptic feedback for success
+        if (type === 'success' && navigator.vibrate) {
+            navigator.vibrate([50, 30, 50]);
+        }
+        
+        // Show animation
+        requestAnimationFrame(() => {
+            toast.classList.add('show');
+        });
+        
+        // Auto remove
+        const removeToast = () => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    this.container.removeChild(toast);
+                }
+            }, 300);
+        };
+        
+        // Close button handler
+        closeBtn.addEventListener('click', removeToast);
+        
+        // Auto-dismiss
+        if (duration > 0) {
+            setTimeout(removeToast, duration);
+        }
+        
+        return toast;
+    }
+    
+    getIcon(type) {
+        const icons = {
+            success: '✓',
+            error: '✕',
+            warning: '⚠',
+            info: 'ℹ'
+        };
+        return icons[type] || icons.info;
+    }
+}
+
+// Global toast instance
+const toastManager = new ToastManager();
+
+// Utility function for easy access
+function showToast(message, type = 'info', duration = 4000) {
+    return toastManager.show(message, type, duration);
+}
+
 // Smooth scrolling and navigation
 function scrollToSection(sectionId) {
     try {
@@ -44,7 +129,7 @@ function showRegister() {
     try {
         closeModal('loginModal');
         // Add register modal functionality here
-        alert('Register functionality would be implemented here');
+        showToast('Register functionality would be implemented here', 'info');
     } catch (error) {
         console.error('Error showing register:', error);
     }
@@ -93,25 +178,74 @@ window.addEventListener('scroll', function() {
     }
 });
 
-// Floating particles animation
+// High-performance canvas-based floating particles
 function createFloatingParticles() {
-    const particlesContainer = document.querySelector('.floating-particles');
+    const container = document.querySelector('.floating-particles');
+    if (!container) return;
     
-    for (let i = 0; i < 15; i++) {
-        const particle = document.createElement('div');
-        particle.style.position = 'absolute';
-        particle.style.width = '2px';
-        particle.style.height = '2px';
-        particle.style.background = '#FFFFFF';
-        particle.style.borderRadius = '50%';
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.top = Math.random() * 100 + '%';
-        particle.style.animation = `float ${3 + Math.random() * 4}s ease-in-out infinite`;
-        particle.style.animationDelay = Math.random() * 2 + 's';
-        particle.style.opacity = '0.6';
-        
-        particlesContainer.appendChild(particle);
+    // Create canvas
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    container.appendChild(canvas);
+    
+    // Particle system
+    const particles = [];
+    const particleCount = 15;
+    
+    // Initialize particles
+    for (let i = 0; i < particleCount; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5,
+            opacity: 0.3 + Math.random() * 0.3
+        });
     }
+    
+    // Resize canvas
+    function resizeCanvas() {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        canvas.style.position = 'absolute';
+        canvas.style.top = '0';
+        canvas.style.left = '0';
+        canvas.style.pointerEvents = 'none';
+    }
+    
+    // Animation loop
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        particles.forEach(particle => {
+            // Update position
+            particle.x += particle.vx;
+            particle.y += particle.vy;
+            
+            // Wrap around edges
+            if (particle.x < 0) particle.x = canvas.width;
+            if (particle.x > canvas.width) particle.x = 0;
+            if (particle.y < 0) particle.y = canvas.height;
+            if (particle.y > canvas.height) particle.y = 0;
+            
+            // Draw particle
+            ctx.globalAlpha = particle.opacity;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, 1, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        
+        requestAnimationFrame(animate);
+    }
+    
+    // Initialize
+    resizeCanvas();
+    animate();
+    
+    // Handle resize
+    window.addEventListener('resize', resizeCanvas);
 }
 
 // Initialize event listeners
@@ -124,7 +258,30 @@ function initializeEventListeners() {
         const listenBtn = document.getElementById('listenBtn');
         const bookBtn = document.getElementById('bookBtn');
         
-        if (loginBtn) loginBtn.addEventListener('click', showLogin);
+        if (loginBtn) {
+            loginBtn.addEventListener('click', async () => {
+                console.log('Login button clicked');
+                try {
+                    const user = await simpleAuth.checkCurrentUser();
+                    if (user) {
+                        // User is logged in, show logout option
+                        if (confirm('You are already logged in. Do you want to logout?')) {
+                            await simpleAuth.signOut();
+                            updateAdminControls();
+                            showToast('Logged out successfully.', 'success');
+                        }
+                    } else {
+                        console.log('No current user, showing login modal');
+                        showLogin();
+                    }
+                } catch (error) {
+                    console.error('Error in login button handler:', error);
+                    showLogin();
+                }
+            });
+        } else {
+            console.error('Login button not found');
+        }
         if (dashboardBtn) dashboardBtn.addEventListener('click', showDashboard);
         if (adminBtn) adminBtn.addEventListener('click', () => window.location.href = 'admin.html');
         if (listenBtn) listenBtn.addEventListener('click', () => scrollToSection('music'));
@@ -173,28 +330,33 @@ document.addEventListener('DOMContentLoaded', function() {
         createFloatingParticles();
         initializeEventListeners();
     
-    // Service card animations
+    // Service card animations with optimized observer
     const serviceCards = document.querySelectorAll('.service-card');
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
     
-    const observer = new IntersectionObserver(function(entries) {
+    const cardObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                entry.target.style.animation = 'fadeInUp 0.8s ease-out forwards';
+                entry.target.style.transform = 'translateY(0) scale(1)';
+                entry.target.style.opacity = '1';
+                entry.target.style.willChange = 'auto';
             }
         });
-    }, observerOptions);
+    }, { threshold: 0.15 });
     
     serviceCards.forEach(card => {
-        observer.observe(card);
+        card.style.transform = 'translateY(30px) scale(0.95)';
+        card.style.opacity = '0';
+        card.style.transition = 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.6s ease-out';
+        card.style.willChange = 'transform, opacity';
+        cardObserver.observe(card);
     });
     
-    // Track card hover effects
+    // Optimized track card hover effects
     const trackCards = document.querySelectorAll('.track-card');
     trackCards.forEach(card => {
+        card.style.willChange = 'transform';
+        card.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        
         card.addEventListener('mouseenter', function() {
             this.style.transform = 'translateY(-15px) scale(1.02)';
         });
@@ -217,43 +379,40 @@ document.addEventListener('DOMContentLoaded', function() {
                     const message = document.getElementById('contactMessage')?.value?.trim();
                     
                     if (!name || !email || !message) {
-                        alert('Please fill in all required fields.');
+                        showToast('Please fill in all required fields.', 'warning');
                         return;
                     }
                     
                     // Basic email validation
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     if (!emailRegex.test(email)) {
-                        alert('Please enter a valid email address.');
+                        showToast('Please enter a valid email address.', 'warning');
                         return;
                     }
                     
-                    // Store contact form data
+                    // Submit contact form to API
                     const request = {
-                        id: Date.now(),
                         type: 'contact',
-                        user: name,
+                        name: name,
                         email: email,
-                        details: message,
-                        date: new Date().toISOString(),
-                        status: 'pending'
+                        message: message
                     };
                     
-                    storeRequest(request);
-                    alert(`Thank you ${name}! Your message has been sent. We'll get back to you at ${email} soon.`);
+                    await apiClient.createRequest(request);
+                    showToast(`Thank you ${name}! Your message has been sent successfully.`, 'success');
                     
                     // Reset form
                     this.reset();
                 } catch (error) {
                     console.error('Error submitting contact form:', error);
-                    alert('There was an error sending your message. Please try again.');
+                    showToast('There was an error sending your message. Please try again.', 'error');
                 }
             });
         }
     
         const loginForm = document.querySelector('.login-form');
         if (loginForm) {
-            loginForm.addEventListener('submit', function(e) {
+            loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
                 try {
@@ -261,38 +420,31 @@ document.addEventListener('DOMContentLoaded', function() {
                     const password = document.getElementById('loginPassword')?.value;
                     
                     if (!email || !password) {
-                        alert('Please fill in all fields.');
+                        showToast('Please fill in all fields.', 'warning');
                         return;
                     }
                     
                     // Basic email validation
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     if (!emailRegex.test(email)) {
-                        alert('Please enter a valid email address.');
+                        showToast('Please enter a valid email address.', 'warning');
                         return;
                     }
                     
-                    // Simulate login
-                    // Check for admin credentials
-                    if (email === 'admin@chaoschamber.com' && password === 'admin123') {
-                        localStorage.setItem('adminLoggedIn', 'true');
-                        localStorage.setItem('currentUser', email);
+                    // Sign in with Cognito
+                    const result = await simpleAuth.signIn(email, password);
+                    
+                    if (result.success) {
                         updateAdminControls();
-                        alert('Admin login successful!');
+                        showToast('Login successful! Welcome to Chaos Chamber.', 'success');
                         closeModal('loginModal');
-                        return;
+                        showDashboard();
+                    } else {
+                        showToast('Login failed: ' + result.error, 'error');
                     }
-                    
-                    // Store user login
-                    localStorage.setItem('currentUser', email);
-                    localStorage.removeItem('adminLoggedIn');
-                    updateAdminControls();
-                    alert('Login successful! Welcome to Chaos Chamber.');
-                    closeModal('loginModal');
-                    showDashboard();
                 } catch (error) {
                     console.error('Error during login:', error);
-                    alert('Login failed. Please try again.');
+                    showToast('Login failed. Please try again.', 'error');
                 }
             });
         }
@@ -309,38 +461,35 @@ document.addEventListener('DOMContentLoaded', function() {
                         return;
                     }
                     
-                    // Store request in localStorage for admin tracking
+                    // Submit dashboard request to API
                     const request = {
-                        id: Date.now(),
                         type: cardTitle.toLowerCase(),
                         user: getCurrentUser(),
                         email: getCurrentUserEmail(),
-                        details: `User requested ${cardTitle} service`,
-                        date: new Date().toISOString(),
-                        status: 'pending'
+                        details: `User requested ${cardTitle} service`
                     };
                     
-                    storeRequest(request);
+                    await apiClient.createRequest(request);
                     
                     switch(cardTitle) {
                         case 'Collaborations':
-                            alert('Collaboration request submitted! Admin will review and assign tasks.');
+                            showToast('Collaboration request submitted! Admin will review and assign tasks.', 'success');
                             break;
                         case 'Bookings':
-                            alert('Booking request submitted! Admin will schedule your session.');
+                            showToast('Booking request submitted! Admin will schedule your session.', 'success');
                             break;
                         case 'Uploads':
-                            alert('Upload request submitted! Admin will provide upload access.');
+                            showToast('Upload request submitted! Admin will provide upload access.', 'success');
                             break;
                         case 'Feedback':
-                            alert('Feedback request submitted! Admin will assign a reviewer.');
+                            showToast('Feedback request submitted! Admin will assign a reviewer.', 'success');
                             break;
                         default:
-                            alert('Request submitted!');
+                            showToast('Request submitted successfully!', 'success');
                     }
                 } catch (error) {
                     console.error('Error handling dashboard button click:', error);
-                    alert('There was an error processing your request. Please try again.');
+                    showToast('There was an error processing your request. Please try again.', 'error');
                 }
             });
         });
@@ -358,22 +507,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         return;
                     }
                     
-                    // Store service request
+                    // Submit service request to API
                     const request = {
-                        id: Date.now(),
                         type: 'service',
                         user: getCurrentUser() || 'Guest User',
                         email: getCurrentUserEmail() || 'guest@example.com',
-                        details: `Service request: ${serviceTitle} - ${servicePrice}`,
-                        date: new Date().toISOString(),
-                        status: 'pending'
+                        details: `Service request: ${serviceTitle} - ${servicePrice}`
                     };
                     
-                    storeRequest(request);
-                    alert(`${serviceTitle} service request submitted! Admin will contact you soon.`);
+                    await apiClient.createRequest(request);
+                    showToast(`${serviceTitle} service request submitted! Admin will contact you soon.`, 'success');
                 } catch (error) {
                     console.error('Error handling service button click:', error);
-                    alert('There was an error processing your service request. Please try again.');
+                    showToast('There was an error processing your service request. Please try again.', 'error');
                 }
             });
         });
@@ -391,32 +537,38 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Smooth reveal animations for sections
-function revealOnScroll() {
-    const sections = document.querySelectorAll('section');
-    
-    sections.forEach(section => {
-        const sectionTop = section.getBoundingClientRect().top;
-        const windowHeight = window.innerHeight;
-        
-        if (sectionTop < windowHeight * 0.8) {
-            section.style.opacity = '1';
-            section.style.transform = 'translateY(0)';
-        }
-    });
-}
-
-// Initialize reveal animations
-document.addEventListener('DOMContentLoaded', function() {
+// High-performance reveal animations using Intersection Observer
+function initializeRevealAnimations() {
     const sections = document.querySelectorAll('section:not(.hero)');
+    
+    // Set initial state
     sections.forEach(section => {
         section.style.opacity = '0';
         section.style.transform = 'translateY(50px)';
-        section.style.transition = 'all 0.8s ease-out';
+        section.style.transition = 'transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.8s ease-out';
+        section.style.willChange = 'transform, opacity';
     });
-});
+    
+    // Create Intersection Observer
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+                entry.target.style.willChange = 'auto'; // Reset after animation
+            }
+        });
+    }, {
+        threshold: 0.15, // Trigger when 15% visible
+        rootMargin: '0px'
+    });
+    
+    // Observe all sections
+    sections.forEach(section => observer.observe(section));
+}
 
-window.addEventListener('scroll', revealOnScroll);
+// Initialize reveal animations
+document.addEventListener('DOMContentLoaded', initializeRevealAnimations);
 
 // Add dynamic glow effect to buttons
 function addGlowEffect() {
@@ -450,36 +602,20 @@ function throttle(func, limit) {
     }
 }
 
-// Apply throttling to scroll events
-window.addEventListener('scroll', throttle(revealOnScroll, 100));
+// Removed scroll event listener - now using Intersection Observer
 
-// Utility functions for data storage
+// Utility functions for data storage (deprecated - now using API)
+// Keeping for backward compatibility
 function storeRequest(request) {
-    try {
-        const requests = JSON.parse(localStorage.getItem('chaosRequests') || '[]');
-        requests.push(request);
-        localStorage.setItem('chaosRequests', JSON.stringify(requests));
-    } catch (error) {
-        console.error('Error storing request:', error);
-    }
+    console.warn('storeRequest is deprecated. Use apiClient.createRequest() instead.');
 }
 
 function getCurrentUser() {
-    try {
-        return localStorage.getItem('currentUser') || 'Guest User';
-    } catch (error) {
-        console.error('Error getting current user:', error);
-        return 'Guest User';
-    }
+    return simpleAuth.getUsername();
 }
 
 function getCurrentUserEmail() {
-    try {
-        return localStorage.getItem('currentUser') || 'guest@example.com';
-    } catch (error) {
-        console.error('Error getting current user email:', error);
-        return 'guest@example.com';
-    }
+    return simpleAuth.getUserEmail();
 }
 
 // Add back to home button
@@ -499,13 +635,16 @@ function addBackButton() {
 // Initialize back button and admin controls
 document.addEventListener('DOMContentLoaded', function() {
     addBackButton();
-    checkAdminStatus();
+    // Wait for auth to initialize, then check admin status
+    setTimeout(() => {
+        checkAdminStatus();
+    }, 1000);
 });
 
 // Check admin status and show/hide admin controls
 function checkAdminStatus() {
     try {
-        const isAdmin = localStorage.getItem('adminLoggedIn') === 'true';
+        const isAdmin = simpleAuth.isAdmin;
         const adminElements = document.querySelectorAll('.admin-only');
         
         adminElements.forEach(element => {

@@ -1,16 +1,17 @@
-// Admin Data Storage
+// Admin Data Storage - now fetched from API
 let adminData = {
-    users: JSON.parse(localStorage.getItem('chaosUsers') || '[]'),
-    requests: JSON.parse(localStorage.getItem('chaosRequests') || '[]'),
-    tasks: JSON.parse(localStorage.getItem('chaosTasks') || '[]'),
-    uploads: JSON.parse(localStorage.getItem('chaosUploads') || '[]'),
-    music: JSON.parse(localStorage.getItem('chaosMusic') || '[]')
+    users: [],
+    requests: [],
+    tasks: [],
+    uploads: [], // Still using localStorage for file uploads
+    music: [] // Still using localStorage for music
 };
 
 // Initialize admin dashboard
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     try {
         initializeEventListeners();
+        await loadAllData();
         loadDashboardStats();
         loadUsers();
         loadRequests();
@@ -22,6 +23,33 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Error initializing admin dashboard:', error);
     }
 });
+
+// Load all data from API
+async function loadAllData() {
+    try {
+        const [users, requests, tasks] = await Promise.all([
+            apiClient.getUsers(),
+            apiClient.getRequests(),
+            apiClient.getTasks()
+        ]);
+        
+        adminData.users = users;
+        adminData.requests = requests;
+        adminData.tasks = tasks;
+        
+        // Still load from localStorage for uploads and music
+        adminData.uploads = JSON.parse(localStorage.getItem('chaosUploads') || '[]');
+        adminData.music = JSON.parse(localStorage.getItem('chaosMusic') || '[]');
+    } catch (error) {
+        console.error('Error loading data from API:', error);
+        // Fallback to localStorage if API fails
+        adminData.users = JSON.parse(localStorage.getItem('chaosUsers') || '[]');
+        adminData.requests = JSON.parse(localStorage.getItem('chaosRequests') || '[]');
+        adminData.tasks = JSON.parse(localStorage.getItem('chaosTasks') || '[]');
+        adminData.uploads = JSON.parse(localStorage.getItem('chaosUploads') || '[]');
+        adminData.music = JSON.parse(localStorage.getItem('chaosMusic') || '[]');
+    }
+}
 
 // Initialize event listeners
 function initializeEventListeners() {
@@ -133,10 +161,9 @@ function goHome() {
     }
 }
 
-function logout() {
+async function logout() {
     try {
-        localStorage.removeItem('adminLoggedIn');
-        localStorage.removeItem('currentUser');
+        await cognitoAuth.signOut();
         window.location.href = 'index.html';
     } catch (error) {
         console.error('Error during logout:', error);
@@ -190,21 +217,59 @@ function loadUsers() {
     
     adminData.users.forEach(user => {
         const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${user.id}</td>
-            <td>${user.name}</td>
-            <td>${user.email}</td>
-            <td><span class="role-badge ${user.role}">${user.role}</span></td>
-            <td><span class="status-badge ${user.status}">${user.status}</span></td>
-            <td>
-                <button class="btn-edit" data-user-id="${user.id}">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn-delete" data-user-id="${user.id}">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        `;
+        
+        // ID cell
+        const idCell = document.createElement('td');
+        idCell.textContent = user.id;
+        row.appendChild(idCell);
+        
+        // Name cell
+        const nameCell = document.createElement('td');
+        nameCell.textContent = user.name;
+        row.appendChild(nameCell);
+        
+        // Email cell
+        const emailCell = document.createElement('td');
+        emailCell.textContent = user.email;
+        row.appendChild(emailCell);
+        
+        // Role cell
+        const roleCell = document.createElement('td');
+        const roleBadge = document.createElement('span');
+        roleBadge.className = `role-badge ${user.role}`;
+        roleBadge.textContent = user.role;
+        roleCell.appendChild(roleBadge);
+        row.appendChild(roleCell);
+        
+        // Status cell
+        const statusCell = document.createElement('td');
+        const statusBadge = document.createElement('span');
+        statusBadge.className = `status-badge ${user.status}`;
+        statusBadge.textContent = user.status;
+        statusCell.appendChild(statusBadge);
+        row.appendChild(statusCell);
+        
+        // Actions cell
+        const actionsCell = document.createElement('td');
+        
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-edit';
+        editBtn.setAttribute('data-user-id', user.id);
+        const editIcon = document.createElement('i');
+        editIcon.className = 'fas fa-edit';
+        editBtn.appendChild(editIcon);
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-delete';
+        deleteBtn.setAttribute('data-user-id', user.id);
+        const deleteIcon = document.createElement('i');
+        deleteIcon.className = 'fas fa-trash';
+        deleteBtn.appendChild(deleteIcon);
+        
+        actionsCell.appendChild(editBtn);
+        actionsCell.appendChild(deleteBtn);
+        row.appendChild(actionsCell);
+        
         tbody.appendChild(row);
     });
 }
@@ -261,12 +326,17 @@ function editUser(id) {
     }
 }
 
-function deleteUser(id) {
+async function deleteUser(id) {
     if (confirm('Are you sure you want to delete this user?')) {
-        adminData.users = adminData.users.filter(u => u.id !== id);
-        localStorage.setItem('chaosUsers', JSON.stringify(adminData.users));
-        loadUsers();
-        loadDashboardStats();
+        try {
+            await apiClient.deleteUser(id);
+            adminData.users = adminData.users.filter(u => u.id !== id);
+            loadUsers();
+            loadDashboardStats();
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            alert('Error deleting user. Please try again.');
+        }
     }
 }
 
@@ -277,22 +347,65 @@ function loadRequests() {
     
     adminData.requests.forEach(request => {
         const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${request.id}</td>
-            <td><span class="type-badge ${request.type}">${request.type}</span></td>
-            <td>${request.user}</td>
-            <td class="details-cell">${truncateText(request.details, 50)}</td>
-            <td>${new Date(request.date).toLocaleDateString()}</td>
-            <td><span class="status-badge ${request.status}">${request.status}</span></td>
-            <td>
-                <button class="btn-view" data-request-id="${request.id}">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button class="btn-edit" data-request-id="${request.id}">
-                    <i class="fas fa-check"></i>
-                </button>
-            </td>
-        `;
+        
+        // ID cell
+        const idCell = document.createElement('td');
+        idCell.textContent = request.id;
+        row.appendChild(idCell);
+        
+        // Type cell
+        const typeCell = document.createElement('td');
+        const typeBadge = document.createElement('span');
+        typeBadge.className = `type-badge ${request.type}`;
+        typeBadge.textContent = request.type;
+        typeCell.appendChild(typeBadge);
+        row.appendChild(typeCell);
+        
+        // User cell
+        const userCell = document.createElement('td');
+        userCell.textContent = request.user;
+        row.appendChild(userCell);
+        
+        // Details cell
+        const detailsCell = document.createElement('td');
+        detailsCell.className = 'details-cell';
+        detailsCell.textContent = truncateText(request.details, 50);
+        row.appendChild(detailsCell);
+        
+        // Date cell
+        const dateCell = document.createElement('td');
+        dateCell.textContent = new Date(request.date || request.createdAt).toLocaleDateString();
+        row.appendChild(dateCell);
+        
+        // Status cell
+        const statusCell = document.createElement('td');
+        const statusBadge = document.createElement('span');
+        statusBadge.className = `status-badge ${request.status}`;
+        statusBadge.textContent = request.status;
+        statusCell.appendChild(statusBadge);
+        row.appendChild(statusCell);
+        
+        // Actions cell
+        const actionsCell = document.createElement('td');
+        
+        const viewBtn = document.createElement('button');
+        viewBtn.className = 'btn-view';
+        viewBtn.setAttribute('data-request-id', request.id);
+        const viewIcon = document.createElement('i');
+        viewIcon.className = 'fas fa-eye';
+        viewBtn.appendChild(viewIcon);
+        
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-edit';
+        editBtn.setAttribute('data-request-id', request.id);
+        const editIcon = document.createElement('i');
+        editIcon.className = 'fas fa-check';
+        editBtn.appendChild(editIcon);
+        
+        actionsCell.appendChild(viewBtn);
+        actionsCell.appendChild(editBtn);
+        row.appendChild(actionsCell);
+        
         tbody.appendChild(row);
     });
 }
@@ -334,22 +447,64 @@ function loadTasks() {
     
     adminData.tasks.forEach(task => {
         const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${task.id}</td>
-            <td>${task.title}</td>
-            <td>${task.assignee}</td>
-            <td><span class="priority-badge ${task.priority}">${task.priority}</span></td>
-            <td><span class="status-badge ${task.status}">${task.status}</span></td>
-            <td>${task.dueDate}</td>
-            <td>
-                <button class="btn-edit" data-task-id="${task.id}">
-                    <i class="fas fa-check"></i>
-                </button>
-                <button class="btn-delete" data-task-id="${task.id}">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        `;
+        
+        // ID cell
+        const idCell = document.createElement('td');
+        idCell.textContent = task.id;
+        row.appendChild(idCell);
+        
+        // Title cell
+        const titleCell = document.createElement('td');
+        titleCell.textContent = task.title;
+        row.appendChild(titleCell);
+        
+        // Assignee cell
+        const assigneeCell = document.createElement('td');
+        assigneeCell.textContent = task.assignee;
+        row.appendChild(assigneeCell);
+        
+        // Priority cell
+        const priorityCell = document.createElement('td');
+        const priorityBadge = document.createElement('span');
+        priorityBadge.className = `priority-badge ${task.priority}`;
+        priorityBadge.textContent = task.priority;
+        priorityCell.appendChild(priorityBadge);
+        row.appendChild(priorityCell);
+        
+        // Status cell
+        const statusCell = document.createElement('td');
+        const statusBadge = document.createElement('span');
+        statusBadge.className = `status-badge ${task.status}`;
+        statusBadge.textContent = task.status;
+        statusCell.appendChild(statusBadge);
+        row.appendChild(statusCell);
+        
+        // Due date cell
+        const dueDateCell = document.createElement('td');
+        dueDateCell.textContent = task.dueDate;
+        row.appendChild(dueDateCell);
+        
+        // Actions cell
+        const actionsCell = document.createElement('td');
+        
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-edit';
+        editBtn.setAttribute('data-task-id', task.id);
+        const editIcon = document.createElement('i');
+        editIcon.className = 'fas fa-check';
+        editBtn.appendChild(editIcon);
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-delete';
+        deleteBtn.setAttribute('data-task-id', task.id);
+        const deleteIcon = document.createElement('i');
+        deleteIcon.className = 'fas fa-trash';
+        deleteBtn.appendChild(deleteIcon);
+        
+        actionsCell.appendChild(editBtn);
+        actionsCell.appendChild(deleteBtn);
+        row.appendChild(actionsCell);
+        
         tbody.appendChild(row);
     });
 }
@@ -419,19 +574,44 @@ function loadMusic() {
     allTracks.forEach(track => {
         const card = document.createElement('div');
         card.className = 'music-admin-card';
-        card.innerHTML = `
-            <div class="track-image"></div>
-            <h3>${track.title}</h3>
-            <p>${track.genre} • ${track.year}</p>
-            <div class="music-actions">
-                <button class="btn-edit" data-track-id="${track.id}">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn-delete" data-track-id="${track.id}">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        `;
+        
+        // Track image
+        const trackImage = document.createElement('div');
+        trackImage.className = 'track-image';
+        card.appendChild(trackImage);
+        
+        // Title
+        const title = document.createElement('h3');
+        title.textContent = track.title;
+        card.appendChild(title);
+        
+        // Genre and year
+        const info = document.createElement('p');
+        info.textContent = `${track.genre} • ${track.year}`;
+        card.appendChild(info);
+        
+        // Actions
+        const actions = document.createElement('div');
+        actions.className = 'music-actions';
+        
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-edit';
+        editBtn.setAttribute('data-track-id', track.id);
+        const editIcon = document.createElement('i');
+        editIcon.className = 'fas fa-edit';
+        editBtn.appendChild(editIcon);
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-delete';
+        deleteBtn.setAttribute('data-track-id', track.id);
+        const deleteIcon = document.createElement('i');
+        deleteIcon.className = 'fas fa-trash';
+        deleteBtn.appendChild(deleteIcon);
+        
+        actions.appendChild(editBtn);
+        actions.appendChild(deleteBtn);
+        card.appendChild(actions);
+        
         grid.appendChild(card);
     });
 }
@@ -495,18 +675,38 @@ function loadUploads() {
     adminData.uploads.forEach(upload => {
         const fileCard = document.createElement('div');
         fileCard.className = 'file-card';
-        fileCard.innerHTML = `
-            <div class="file-icon">
-                <i class="fas fa-file"></i>
-            </div>
-            <div class="file-info">
-                <h4>${upload.name}</h4>
-                <p>${formatFileSize(upload.size)} • ${new Date(upload.date).toLocaleDateString()}</p>
-            </div>
-            <button class="btn-delete" data-upload-id="${upload.id}">
-                <i class="fas fa-trash"></i>
-            </button>
-        `;
+        
+        // File icon
+        const fileIcon = document.createElement('div');
+        fileIcon.className = 'file-icon';
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-file';
+        fileIcon.appendChild(icon);
+        fileCard.appendChild(fileIcon);
+        
+        // File info
+        const fileInfo = document.createElement('div');
+        fileInfo.className = 'file-info';
+        
+        const fileName = document.createElement('h4');
+        fileName.textContent = upload.name;
+        fileInfo.appendChild(fileName);
+        
+        const fileDetails = document.createElement('p');
+        fileDetails.textContent = `${formatFileSize(upload.size)} • ${new Date(upload.date).toLocaleDateString()}`;
+        fileInfo.appendChild(fileDetails);
+        
+        fileCard.appendChild(fileInfo);
+        
+        // Delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-delete';
+        deleteBtn.setAttribute('data-upload-id', upload.id);
+        const deleteIcon = document.createElement('i');
+        deleteIcon.className = 'fas fa-trash';
+        deleteBtn.appendChild(deleteIcon);
+        fileCard.appendChild(deleteBtn);
+        
         container.appendChild(fileCard);
     });
 }
@@ -521,30 +721,37 @@ function deleteUpload(id) {
 document.addEventListener('DOMContentLoaded', function() {
     const userForm = document.getElementById('userForm');
     if (userForm) {
-        userForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const userId = document.getElementById('userId').value;
-    const userData = {
-        id: userId ? parseInt(userId) : Date.now(),
-        name: document.getElementById('userName').value,
-        email: document.getElementById('userEmail').value,
-        role: document.getElementById('userRole').value,
-        status: document.getElementById('userStatus').value
-    };
-    
-    if (userId) {
-        const index = adminData.users.findIndex(u => u.id === parseInt(userId));
-        adminData.users[index] = userData;
-    } else {
-        adminData.users.push(userData);
-    }
-    
-    localStorage.setItem('chaosUsers', JSON.stringify(adminData.users));
-    loadUsers();
-    loadDashboardStats();
-    populateTaskAssignees();
-            closeModal('userModal');
+        userForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const userId = document.getElementById('userId').value;
+            const userData = {
+                id: userId ? parseInt(userId) : Date.now(),
+                name: document.getElementById('userName').value,
+                email: document.getElementById('userEmail').value,
+                role: document.getElementById('userRole').value,
+                status: document.getElementById('userStatus').value
+            };
+            
+            try {
+                if (userId) {
+                    await apiClient.updateUser(userId, userData);
+                    const index = adminData.users.findIndex(u => u.id === parseInt(userId));
+                    adminData.users[index] = userData;
+                } else {
+                    const result = await apiClient.createUser(userData);
+                    userData.id = result.id;
+                    adminData.users.push(userData);
+                }
+                
+                loadUsers();
+                loadDashboardStats();
+                populateTaskAssignees();
+                closeModal('userModal');
+            } catch (error) {
+                console.error('Error saving user:', error);
+                alert('Error saving user. Please try again.');
+            }
         });
     }
 });

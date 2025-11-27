@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://unpkg.com; connect-src 'self' https://*.amazonaws.com https://*.amazoncognito.com; img-src 'self' data:;">
     <meta name="description" content="Chaos Chamber - Premium music production, mixing, and collaboration platform. Professional studio services and state-of-the-art equipment.">
     <title>Chaos Chamber - Premium Music Studio</title>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
@@ -231,6 +231,9 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/aws-amplify@5.3.11/dist/aws-amplify.min.js"></script>
+    <script src="simple-auth.js"></script>
+    <script src="api-client.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
