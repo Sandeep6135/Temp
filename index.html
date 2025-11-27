@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <meta name="description" content="Chaos Chamber - Premium music production, mixing, and collaboration platform. Professional studio services and state-of-the-art equipment.">
+    <title>Chaos Chamber - Premium Music Studio</title>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+        <div class="nav-container">
+            <div class="nav-logo" role="banner">CHAOS CHAMBER</div>
+            <div class="nav-menu" role="menubar">
+                <a href="#home" class="nav-link" role="menuitem">Home</a>
+                <a href="#music" class="nav-link" role="menuitem">Music</a>
+                <a href="#services" class="nav-link" role="menuitem">Services</a>
+                <a href="#studio" class="nav-link" role="menuitem">Studio</a>
+                <a href="#contact" class="nav-link" role="menuitem">Contact</a>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn-login" id="loginBtn" aria-label="Open login modal">Login</button>
+                <button class="btn-dashboard" id="dashboardBtn" aria-label="Open dashboard">Dashboard</button>
+                <button class="btn-login admin-only" id="adminBtn" title="Admin Access" style="display: none;" aria-label="Access admin panel">
+                    <i class="fas fa-cog" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <main>
+        <section id="home" class="hero" role="banner">
+            <div class="hero-bg" aria-hidden="true"></div>
+            <div class="floating-particles" aria-hidden="true"></div>
+            <div class="hero-content">
+                <h1 class="hero-title">CHAOS CHAMBER</h1>
+                <p class="hero-subtitle">Where sound meets innovation. Premium music production, mixing, and collaboration platform.</p>
+                <div class="hero-buttons">
+                    <button class="btn-primary" id="listenBtn" aria-label="Navigate to music section">
+                        Listen Now <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                    </button>
+                    <button class="btn-secondary" id="bookBtn" aria-label="Navigate to services section">Book a Session</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Music Section -->
+        <section id="music" class="music-section">
+            <div class="container">
+                <h2 class="section-title">Featured Tracks</h2>
+                <div class="music-grid" role="list">
+                    <article class="track-card" role="listitem">
+                        <div class="track-image" role="img" aria-label="Neon Dreams album artwork"></div>
+                        <h3>Neon Dreams</h3>
+                        <p>Electronic • 2024</p>
+                        <button class="play-btn" aria-label="Play Neon Dreams track"><i class="fas fa-play" aria-hidden="true"></i></button>
+                    </article>
+                    <article class="track-card" role="listitem">
+                        <div class="track-image" role="img" aria-label="Digital Chaos album artwork"></div>
+                        <h3>Digital Chaos</h3>
+                        <p>Synthwave • 2024</p>
+                        <button class="play-btn" aria-label="Play Digital Chaos track"><i class="fas fa-play" aria-hidden="true"></i></button>
+                    </article>
+                    <article class="track-card" role="listitem">
+                        <div class="track-image" role="img" aria-label="Future Bass album artwork"></div>
+                        <h3>Future Bass</h3>
+                        <p>EDM • 2024</p>
+                        <button class="play-btn" aria-label="Play Future Bass track"><i class="fas fa-play" aria-hidden="true"></i></button>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- Services Section -->
+        <section id="services" class="services-section">
+            <div class="container">
+                <h2 class="section-title">Our Services</h2>
+                <div class="services-grid" role="list">
+                    <article class="service-card" role="listitem">
+                        <div class="service-icon" role="img" aria-label="Collaboration service icon"><i class="fas fa-users" aria-hidden="true"></i></div>
+                        <h3>Collaboration</h3>
+                        <p>Work together on your next masterpiece with our collaborative tools and platform.</p>
+                        <ul>
+                            <li>Real-time collaboration</li>
+                            <li>Version control</li>
+                            <li>Project management</li>
+                        </ul>
+                        <div class="service-price" aria-label="Price starting from 99 dollars per month">From $99/month</div>
+                        <button class="service-btn" aria-label="Get started with collaboration service">Get Started</button>
+                    </article>
+                    <article class="service-card" role="listitem">
+                        <div class="service-icon" role="img" aria-label="Mixing and mastering service icon"><i class="fas fa-headphones" aria-hidden="true"></i></div>
+                        <h3>Mixing & Mastering</h3>
+                        <p>Professional mixing and mastering services to make your tracks radio-ready.</p>
+                        <ul>
+                            <li>Professional mixing</li>
+                            <li>Audio mastering</li>
+                            <li>Quality guarantee</li>
+                        </ul>
+                        <div class="service-price" aria-label="Price starting from 199 dollars per track">From $199/track</div>
+                        <button class="service-btn" aria-label="Get started with mixing and mastering service">Get Started</button>
+                    </article>
+                    <article class="service-card" role="listitem">
+                        <div class="service-icon" role="img" aria-label="Custom production service icon"><i class="fas fa-music" aria-hidden="true"></i></div>
+                        <h3>Custom Production</h3>
+                        <p>Bespoke music production tailored to your unique sound and vision.</p>
+                        <ul>
+                            <li>Original compositions</li>
+                            <li>Sound design</li>
+                            <li>Full production</li>
+                        </ul>
+                        <div class="service-price" aria-label="Price starting from 499 dollars per track">From $499/track</div>
+                        <button class="service-btn" aria-label="Get started with custom production service">Get Started</button>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- Studio Section -->
+        <section id="studio" class="studio-section">
+            <div class="container">
+                <h2 class="section-title">Our Studio</h2>
+                <div class="studio-content">
+                    <div class="studio-image" role="img" aria-label="Professional music studio interior"></div>
+                    <div class="studio-info">
+                        <h3>State-of-the-Art Equipment</h3>
+                        <p>Experience music production in our world-class studio featuring the latest technology and premium equipment.</p>
+                        <div class="equipment-list" role="list">
+                            <div class="equipment-item" role="listitem">
+                                <i class="fas fa-microphone" aria-hidden="true"></i>
+                                <span>Neumann U87 Microphones</span>
+                            </div>
+                            <div class="equipment-item" role="listitem">
+                                <i class="fas fa-sliders-h" aria-hidden="true"></i>
+                                <span>SSL Console</span>
+                            </div>
+                            <div class="equipment-item" role="listitem">
+                                <i class="fas fa-volume-up" aria-hidden="true"></i>
+                                <span>Genelec Monitors</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="contact-section">
+            <div class="container">
+                <h2 class="section-title">Get In Touch</h2>
+                <div class="contact-content">
+                    <form class="contact-form" role="form" aria-label="Contact form">
+                        <label for="contactName" class="sr-only">Your Name</label>
+                        <input type="text" id="contactName" name="name" placeholder="Your Name" required aria-required="true">
+                        <label for="contactEmail" class="sr-only">Your Email</label>
+                        <input type="email" id="contactEmail" name="email" placeholder="Your Email" required aria-required="true">
+                        <label for="contactMessage" class="sr-only">Your Message</label>
+                        <textarea id="contactMessage" name="message" placeholder="Your Message" rows="5" required aria-required="true"></textarea>
+                        <button type="submit" class="btn-primary" aria-label="Send contact message">Send Message</button>
+                    </form>
+                    <div class="contact-info" role="complementary">
+                        <div class="contact-item">
+                            <i class="fas fa-envelope" aria-hidden="true"></i>
+                            <span>hello@chaoschamber.com</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-phone" aria-hidden="true"></i>
+                            <span>+1 (555) 123-4567</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                            <span>Los Angeles, CA</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal" role="dialog" aria-labelledby="loginTitle" aria-hidden="true">
+        <div class="modal-content">
+            <button class="close" id="closeLogin" aria-label="Close login modal">&times;</button>
+            <h2 id="loginTitle">Welcome Back</h2>
+            <form class="login-form" role="form" aria-label="Login form">
+                <label for="loginEmail" class="sr-only">Email Address</label>
+                <input type="email" id="loginEmail" name="email" placeholder="Email" required aria-required="true">
+                <label for="loginPassword" class="sr-only">Password</label>
+                <input type="password" id="loginPassword" name="password" placeholder="Password" required aria-required="true">
+                <button type="submit" class="btn-primary" aria-label="Sign in to account">Sign In</button>
+            </form>
+            <p>Don't have an account? <button type="button" id="showRegisterBtn" class="link-btn">Sign up</button></p>
+        </div>
+    </div>
+
+    <!-- Dashboard Modal -->
+    <div id="dashboardModal" class="modal" role="dialog" aria-labelledby="dashboardTitle" aria-hidden="true">
+        <div class="modal-content dashboard-content">
+            <button class="close" id="closeDashboard" aria-label="Close dashboard modal">&times;</button>
+            <div class="dashboard-header">
+                <h2 id="dashboardTitle">Dashboard</h2>
+            </div>
+            <div class="dashboard-grid" role="list">
+                <article class="dashboard-card" role="listitem">
+                    <h3>Collaborations</h3>
+                    <p>Manage your active projects</p>
+                    <button class="dashboard-btn" aria-label="Access collaboration tools">Access</button>
+                </article>
+                <article class="dashboard-card" role="listitem">
+                    <h3>Bookings</h3>
+                    <p>Schedule studio sessions</p>
+                    <button class="dashboard-btn" aria-label="Manage bookings">Manage</button>
+                </article>
+                <article class="dashboard-card" role="listitem">
+                    <h3>Uploads</h3>
+                    <p>Upload and manage your tracks</p>
+                    <button class="dashboard-btn" aria-label="Upload files">Upload</button>
+                </article>
+                <article class="dashboard-card" role="listitem">
+                    <h3>Feedback</h3>
+                    <p>Get professional feedback</p>
+                    <button class="dashboard-btn" aria-label="Request feedback">Request</button>
+                </article>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

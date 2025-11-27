@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <meta name="description" content="Admin Dashboard for Chaos Chamber - Manage users, requests, tasks, and studio operations.">
+    <title>Admin Dashboard - Chaos Chamber</title>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar" role="navigation" aria-label="Admin navigation">
+        <div class="nav-container">
+            <div class="nav-logo" role="banner">CHAOS CHAMBER - ADMIN</div>
+            <div class="nav-buttons">
+                <button class="btn-login" id="homeBtn" aria-label="Go to home page">
+                    <i class="fas fa-home" aria-hidden="true"></i> Home
+                </button>
+                <button class="btn-dashboard" id="logoutBtn" aria-label="Logout from admin panel">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <aside class="admin-sidebar" role="complementary" aria-label="Admin navigation menu">
+            <nav class="sidebar-menu" role="navigation">
+                <button class="sidebar-btn active" data-section="dashboard" aria-label="View dashboard">
+                    <i class="fas fa-tachometer-alt" aria-hidden="true"></i> Dashboard
+                </button>
+                <button class="sidebar-btn" data-section="users" aria-label="Manage users">
+                    <i class="fas fa-users" aria-hidden="true"></i> Users
+                </button>
+                <button class="sidebar-btn" data-section="requests" aria-label="View requests">
+                    <i class="fas fa-clipboard-list" aria-hidden="true"></i> Requests
+                </button>
+                <button class="sidebar-btn" data-section="music" aria-label="Manage music">
+                    <i class="fas fa-music" aria-hidden="true"></i> Music Management
+                </button>
+                <button class="sidebar-btn" data-section="tasks" aria-label="Manage tasks">
+                    <i class="fas fa-tasks" aria-hidden="true"></i> Task Assignment
+                </button>
+                <button class="sidebar-btn" data-section="uploads" aria-label="Manage file uploads">
+                    <i class="fas fa-upload" aria-hidden="true"></i> File Uploads
+                </button>
+            </nav>
+        </aside>
+
+        <div class="admin-content">
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="admin-section active">
+                <h2>Admin Dashboard</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <i class="fas fa-users"></i>
+                        <div class="stat-info">
+                            <h3 id="totalUsers">0</h3>
+                            <p>Total Users</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-clipboard-list"></i>
+                        <div class="stat-info">
+                            <h3 id="totalRequests">0</h3>
+                            <p>Total Requests</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-music"></i>
+                        <div class="stat-info">
+                            <h3 id="totalTracks">3</h3>
+                            <p>Music Tracks</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-tasks"></i>
+                        <div class="stat-info">
+                            <h3 id="pendingTasks">0</h3>
+                            <p>Pending Tasks</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Section -->
+            <div id="users" class="admin-section">
+                <h2>User Management</h2>
+                <div class="section-controls">
+                    <button class="btn-primary" id="addUserBtn" aria-label="Add new user">
+                        <i class="fas fa-plus" aria-hidden="true"></i> Add User
+                    </button>
+                </div>
+                <div class="data-table">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Requests Section -->
+            <div id="requests" class="admin-section">
+                <h2>User Requests</h2>
+                <div class="filter-controls">
+                    <label for="requestFilter" class="sr-only">Filter requests by type</label>
+                    <select id="requestFilter" aria-label="Filter requests by type">
+                        <option value="all">All Requests</option>
+                        <option value="contact">Contact Forms</option>
+                        <option value="service">Service Requests</option>
+                        <option value="collaboration">Collaborations</option>
+                        <option value="booking">Bookings</option>
+                    </select>
+                </div>
+                <div class="data-table">
+                    <table id="requestsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Type</th>
+                                <th>User</th>
+                                <th>Details</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Music Management Section -->
+            <div id="music" class="admin-section">
+                <h2>Music Management</h2>
+                <div class="section-controls">
+                    <button class="btn-primary" id="uploadMusicBtn" aria-label="Upload new music track">
+                        <i class="fas fa-upload" aria-hidden="true"></i> Upload Track
+                    </button>
+                </div>
+                <div class="music-grid" id="musicGrid"></div>
+            </div>
+
+            <!-- Task Assignment Section -->
+            <div id="tasks" class="admin-section">
+                <h2>Task Assignment</h2>
+                <div class="section-controls">
+                    <button class="btn-primary" id="createTaskBtn" aria-label="Create new task">
+                        <i class="fas fa-plus" aria-hidden="true"></i> Create Task
+                    </button>
+                </div>
+                <div class="data-table">
+                    <table id="tasksTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Task</th>
+                                <th>Assigned To</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Due Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- File Uploads Section -->
+            <div id="uploads" class="admin-section">
+                <h2>File Management</h2>
+                <div class="upload-area">
+                    <div class="upload-zone" id="uploadZone" role="button" tabindex="0" aria-label="Click to upload files or drag and drop">
+                        <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
+                        <p>Click to upload files or drag and drop</p>
+                        <input type="file" id="fileInput" multiple style="display: none;" aria-label="Select files to upload">
+                    </div>
+                </div>
+                <div class="uploaded-files" id="uploadedFiles"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="userModal" class="modal" role="dialog" aria-labelledby="userModalTitle" aria-hidden="true">
+        <div class="modal-content">
+            <button class="close" id="closeUserModal" aria-label="Close user modal">&times;</button>
+            <h2 id="userModalTitle">Add User</h2>
+            <form id="userForm" class="admin-form" role="form">
+                <input type="hidden" id="userId">
+                <label for="userName" class="sr-only">Full Name</label>
+                <input type="text" id="userName" name="name" placeholder="Full Name" required aria-required="true">
+                <label for="userEmail" class="sr-only">Email Address</label>
+                <input type="email" id="userEmail" name="email" placeholder="Email" required aria-required="true">
+                <label for="userRole" class="sr-only">User Role</label>
+                <select id="userRole" name="role" required aria-required="true">
+                    <option value="">Select Role</option>
+                    <option value="user">User</option>
+                    <option value="producer">Producer</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <label for="userStatus" class="sr-only">User Status</label>
+                <select id="userStatus" name="status">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+                <button type="submit" class="btn-primary" aria-label="Save user information">Save User</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="taskModal" class="modal" role="dialog" aria-labelledby="taskModalTitle" aria-hidden="true">
+        <div class="modal-content">
+            <button class="close" id="closeTaskModal" aria-label="Close task modal">&times;</button>
+            <h2 id="taskModalTitle">Create Task</h2>
+            <form id="taskForm" class="admin-form" role="form">
+                <label for="taskTitle" class="sr-only">Task Title</label>
+                <input type="text" id="taskTitle" name="title" placeholder="Task Title" required aria-required="true">
+                <label for="taskDescription" class="sr-only">Task Description</label>
+                <textarea id="taskDescription" name="description" placeholder="Task Description" rows="3"></textarea>
+                <label for="taskAssignee" class="sr-only">Assign Task To</label>
+                <select id="taskAssignee" name="assignee" required aria-required="true">
+                    <option value="">Assign To</option>
+                </select>
+                <label for="taskPriority" class="sr-only">Task Priority</label>
+                <select id="taskPriority" name="priority">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+                <label for="taskDueDate" class="sr-only">Due Date</label>
+                <input type="date" id="taskDueDate" name="dueDate" required aria-required="true">
+                <button type="submit" class="btn-primary" aria-label="Create new task">Create Task</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="auth-check.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
