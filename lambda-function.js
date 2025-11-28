@@ -2,8 +2,7 @@ const AWS = require('aws-sdk');
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 const TABLE_NAME = process.env.TABLE_NAME || 'ChaosChambersData';
-const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://yourdomain.com'];
-
+const ALLOWED_ORIGINS = ['*'];
 // Input validation helper
 function validateInput(data, requiredFields = []) {
     if (!data || typeof data !== 'object') {

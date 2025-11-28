@@ -1,9 +1,12 @@
 // API Client for serverless backend
 class ApiClient {
     constructor() {
-        this.baseUrl = 'https://YOUR_API_ID.execute-api.YOUR_REGION.amazonaws.com/prod';
+        // UPDATED WITH YOUR NEW URL:
+        this.baseUrl = 'https://z2ait3lbw4.execute-api.us-west-1.amazonaws.com/prod';
         this.timeout = 30000;
     }
+    // ... rest of the code ...
+}
 
     validateInput(data, requiredFields = []) {
         if (!data || typeof data !== 'object') {
