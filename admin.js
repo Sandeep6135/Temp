@@ -213,24 +213,36 @@ function loadDashboardStats() {
 // User Management
 function loadUsers() {
     const tbody = document.querySelector('#usersTable tbody');
+    if (!tbody) {
+        console.error('Users table body not found');
+        return;
+    }
+    
     tbody.innerHTML = '';
     
+    if (!Array.isArray(adminData.users)) {
+        console.error('Invalid users data');
+        return;
+    }
+    
     adminData.users.forEach(user => {
+        if (!user || typeof user !== 'object') return;
+        
         const row = document.createElement('tr');
         
         // ID cell
         const idCell = document.createElement('td');
-        idCell.textContent = user.id;
+        idCell.textContent = String(user.id || '');
         row.appendChild(idCell);
         
-        // Name cell
+        // Name cell - sanitize output
         const nameCell = document.createElement('td');
-        nameCell.textContent = user.name;
+        nameCell.textContent = String(user.name || '').replace(/[<>"'&]/g, '');
         row.appendChild(nameCell);
         
-        // Email cell
+        // Email cell - sanitize output
         const emailCell = document.createElement('td');
-        emailCell.textContent = user.email;
+        emailCell.textContent = String(user.email || '').replace(/[<>"'&]/g, '');
         row.appendChild(emailCell);
         
         // Role cell
@@ -425,9 +437,23 @@ function filterRequests() {
 }
 
 function viewRequest(id) {
-    const request = adminData.requests.find(r => r.id === id);
+    if (!id) {
+        console.error('Request ID is required');
+        return;
+    }
+    
+    const request = adminData.requests.find(r => r.id == id);
     if (request) {
-        alert(`Request Details:\n\nType: ${request.type}\nUser: ${request.user}\nEmail: ${request.email}\nDetails: ${request.details}\nDate: ${new Date(request.date).toLocaleString()}`);
+        // Sanitize data before displaying
+        const sanitizedType = String(request.type || '').replace(/[<>"'&]/g, '');
+        const sanitizedUser = String(request.user || '').replace(/[<>"'&]/g, '');
+        const sanitizedEmail = String(request.email || '').replace(/[<>"'&]/g, '');
+        const sanitizedDetails = String(request.details || '').replace(/[<>"'&]/g, '');
+        const dateStr = request.date ? new Date(request.date).toLocaleString() : 'Unknown';
+        
+        alert(`Request Details:\n\nType: ${sanitizedType}\nUser: ${sanitizedUser}\nEmail: ${sanitizedEmail}\nDetails: ${sanitizedDetails}\nDate: ${dateStr}`);
+    } else {
+        alert('Request not found.');
     }
 }
 
@@ -624,10 +650,19 @@ function uploadMusic() {
         const genre = prompt('Enter genre:');
         if (!genre || genre.trim() === '') return;
         
+        // Sanitize inputs
+        const sanitizedTitle = title.trim().replace(/[<>"'&]/g, '').substring(0, 100);
+        const sanitizedGenre = genre.trim().replace(/[<>"'&]/g, '').substring(0, 50);
+        
+        if (!sanitizedTitle || !sanitizedGenre) {
+            alert('Invalid input. Please use only alphanumeric characters.');
+            return;
+        }
+        
         const newTrack = {
             id: Date.now(),
-            title: title.trim(),
-            genre: genre.trim(),
+            title: sanitizedTitle,
+            genre: sanitizedGenre,
             year: new Date().getFullYear().toString()
         };
         
@@ -651,21 +686,48 @@ function deleteTrack(id) {
 
 // File Upload Management
 function handleFileUpload(event) {
-    const files = Array.from(event.target.files);
-    
-    files.forEach(file => {
-        const upload = {
-            id: Date.now() + Math.random(),
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            date: new Date().toISOString()
-        };
-        adminData.uploads.push(upload);
-    });
-    
-    localStorage.setItem('chaosUploads', JSON.stringify(adminData.uploads));
-    loadUploads();
+    try {
+        if (!event.target.files) {
+            console.error('No files selected');
+            return;
+        }
+        
+        const files = Array.from(event.target.files);
+        const maxFileSize = 10 * 1024 * 1024; // 10MB
+        const allowedTypes = ['image/', 'audio/', 'video/', 'application/pdf', 'text/'];
+        
+        files.forEach(file => {
+            // File validation
+            if (file.size > maxFileSize) {
+                alert(`File ${file.name} is too large. Maximum size is 10MB.`);
+                return;
+            }
+            
+            const isAllowedType = allowedTypes.some(type => file.type.startsWith(type));
+            if (!isAllowedType) {
+                alert(`File type ${file.type} is not allowed.`);
+                return;
+            }
+            
+            // Sanitize filename
+            const sanitizedName = file.name.replace(/[<>"'&]/g, '').substring(0, 255);
+            
+            const upload = {
+                id: Date.now() + Math.random(),
+                name: sanitizedName,
+                size: file.size,
+                type: file.type,
+                date: new Date().toISOString()
+            };
+            adminData.uploads.push(upload);
+        });
+        
+        localStorage.setItem('chaosUploads', JSON.stringify(adminData.uploads));
+        loadUploads();
+    } catch (error) {
+        console.error('Error handling file upload:', error);
+        alert('Error uploading files. Please try again.');
+    }
 }
 
 function loadUploads() {
@@ -760,24 +822,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const taskForm = document.getElementById('taskForm');
     if (taskForm) {
         taskForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const taskData = {
-        id: Date.now(),
-        title: document.getElementById('taskTitle').value,
-        description: document.getElementById('taskDescription').value,
-        assignee: document.getElementById('taskAssignee').value,
-        priority: document.getElementById('taskPriority').value,
-        status: 'pending',
-        dueDate: document.getElementById('taskDueDate').value
-    };
-    
-    adminData.tasks.push(taskData);
-    localStorage.setItem('chaosTasks', JSON.stringify(adminData.tasks));
-    loadTasks();
-    loadDashboardStats();
-    closeModal('taskModal');
-            this.reset();
+            e.preventDefault();
+            
+            try {
+                const taskData = {
+                    id: Date.now(),
+                    title: document.getElementById('taskTitle').value,
+                    description: document.getElementById('taskDescription').value,
+                    assignee: document.getElementById('taskAssignee').value,
+                    priority: document.getElementById('taskPriority').value,
+                    status: 'pending',
+                    dueDate: document.getElementById('taskDueDate').value
+                };
+                
+                adminData.tasks.push(taskData);
+                localStorage.setItem('chaosTasks', JSON.stringify(adminData.tasks));
+                loadTasks();
+                loadDashboardStats();
+                closeModal('taskModal');
+                this.reset();
+            } catch (error) {
+                console.error('Error creating task:', error);
+                alert('Error creating task. Please try again.');
+            }
         });
     }
 });

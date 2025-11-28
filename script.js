@@ -2,40 +2,71 @@
 class ToastManager {
     constructor() {
         this.container = null;
+        this.activeToasts = new Set();
+        this.maxToasts = 5;
         this.init();
     }
     
     init() {
-        this.container = document.createElement('div');
-        this.container.className = 'toast-container';
-        document.body.appendChild(this.container);
+        if (!this.container) {
+            this.container = document.createElement('div');
+            this.container.className = 'toast-container';
+            this.container.setAttribute('aria-live', 'polite');
+            this.container.setAttribute('aria-atomic', 'false');
+            document.body.appendChild(this.container);
+        }
     }
     
     show(message, type = 'info', duration = 4000) {
+        // Input validation
+        if (!message || typeof message !== 'string') {
+            console.error('Invalid toast message');
+            return null;
+        }
+        
+        // Sanitize message
+        const sanitizedMessage = message.replace(/[<>"'&]/g, '').substring(0, 200);
+        
+        // Limit number of active toasts
+        if (this.activeToasts.size >= this.maxToasts) {
+            const oldestToast = this.activeToasts.values().next().value;
+            this.removeToast(oldestToast);
+        }
+        
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
+        toast.setAttribute('role', 'alert');
         
         const icon = this.getIcon(type);
         const closeBtn = document.createElement('button');
         closeBtn.className = 'toast-close';
-        closeBtn.innerHTML = '×';
+        closeBtn.textContent = '×';
         closeBtn.setAttribute('aria-label', 'Close notification');
+        closeBtn.setAttribute('type', 'button');
         
-        toast.innerHTML = `
-            <span class="toast-icon">${icon}</span>
-            <span class="toast-message"></span>
-        `;
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'toast-icon';
+        iconSpan.textContent = icon;
+        iconSpan.setAttribute('aria-hidden', 'true');
         
-        // Safely set message content
-        const messageSpan = toast.querySelector('.toast-message');
-        messageSpan.textContent = message;
+        const messageSpan = document.createElement('span');
+        messageSpan.className = 'toast-message';
+        messageSpan.textContent = sanitizedMessage;
+        
+        toast.appendChild(iconSpan);
+        toast.appendChild(messageSpan);
         
         toast.appendChild(closeBtn);
         this.container.appendChild(toast);
+        this.activeToasts.add(toast);
         
-        // Trigger haptic feedback for success
+        // Trigger haptic feedback for success (with error handling)
         if (type === 'success' && navigator.vibrate) {
-            navigator.vibrate([50, 30, 50]);
+            try {
+                navigator.vibrate([50, 30, 50]);
+            } catch (error) {
+                console.warn('Vibration not supported:', error);
+            }
         }
         
         // Show animation
@@ -43,25 +74,31 @@ class ToastManager {
             toast.classList.add('show');
         });
         
-        // Auto remove
-        const removeToast = () => {
-            toast.classList.remove('show');
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    this.container.removeChild(toast);
-                }
-            }, 300);
-        };
+        // Auto remove function
+        const removeToast = () => this.removeToast(toast);
         
         // Close button handler
-        closeBtn.addEventListener('click', removeToast);
+        closeBtn.addEventListener('click', removeToast, { once: true });
         
-        // Auto-dismiss
-        if (duration > 0) {
+        // Auto-dismiss with validation
+        if (duration > 0 && duration <= 30000) {
             setTimeout(removeToast, duration);
         }
         
         return toast;
+    }
+    
+    removeToast(toast) {
+        if (!toast || !this.activeToasts.has(toast)) return;
+        
+        this.activeToasts.delete(toast);
+        toast.classList.remove('show');
+        
+        setTimeout(() => {
+            if (toast.parentNode === this.container) {
+                this.container.removeChild(toast);
+            }
+        }, 300);
     }
     
     getIcon(type) {
@@ -183,14 +220,30 @@ function createFloatingParticles() {
     const container = document.querySelector('.floating-particles');
     if (!container) return;
     
-    // Create canvas
+    // Check for reduced motion preference
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        return;
+    }
+    
+    // Create canvas with error handling
     const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    let ctx;
+    try {
+        ctx = canvas.getContext('2d');
+        if (!ctx) {
+            console.warn('Canvas context not available');
+            return;
+        }
+    } catch (error) {
+        console.warn('Canvas not supported:', error);
+        return;
+    }
+    
     container.appendChild(canvas);
     
-    // Particle system
+    // Particle system with performance optimization
     const particles = [];
-    const particleCount = 15;
+    const particleCount = Math.min(15, Math.floor(window.innerWidth / 100));
     
     // Initialize particles
     for (let i = 0; i < particleCount; i++) {
@@ -214,30 +267,50 @@ function createFloatingParticles() {
         canvas.style.pointerEvents = 'none';
     }
     
-    // Animation loop
+    let animationId;
+    let isVisible = true;
+    
+    // Visibility API for performance
+    document.addEventListener('visibilitychange', () => {
+        isVisible = !document.hidden;
+        if (isVisible && !animationId) {
+            animate();
+        } else if (!isVisible && animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+    });
+    
+    // Optimized animation loop
     function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!isVisible) return;
         
-        particles.forEach(particle => {
-            // Update position
-            particle.x += particle.vx;
-            particle.y += particle.vy;
+        try {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Wrap around edges
-            if (particle.x < 0) particle.x = canvas.width;
-            if (particle.x > canvas.width) particle.x = 0;
-            if (particle.y < 0) particle.y = canvas.height;
-            if (particle.y > canvas.height) particle.y = 0;
+            particles.forEach(particle => {
+                // Update position
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                
+                // Wrap around edges
+                if (particle.x < 0) particle.x = canvas.width;
+                if (particle.x > canvas.width) particle.x = 0;
+                if (particle.y < 0) particle.y = canvas.height;
+                if (particle.y > canvas.height) particle.y = 0;
+                
+                // Draw particle
+                ctx.globalAlpha = particle.opacity;
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, 1, 0, Math.PI * 2);
+                ctx.fill();
+            });
             
-            // Draw particle
-            ctx.globalAlpha = particle.opacity;
-            ctx.fillStyle = '#FFFFFF';
-            ctx.beginPath();
-            ctx.arc(particle.x, particle.y, 1, 0, Math.PI * 2);
-            ctx.fill();
-        });
-        
-        requestAnimationFrame(animate);
+            animationId = requestAnimationFrame(animate);
+        } catch (error) {
+            console.error('Animation error:', error);
+        }
     }
     
     // Initialize
@@ -369,37 +442,61 @@ document.addEventListener('DOMContentLoaded', function() {
         // Form submissions
         const contactForm = document.querySelector('.contact-form');
         if (contactForm) {
-            contactForm.addEventListener('submit', function(e) {
+            contactForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
                 try {
                     // Get form data with proper validation
-                    const name = document.getElementById('contactName')?.value?.trim();
-                    const email = document.getElementById('contactEmail')?.value?.trim();
-                    const message = document.getElementById('contactMessage')?.value?.trim();
+                    const nameEl = document.getElementById('contactName');
+                    const emailEl = document.getElementById('contactEmail');
+                    const messageEl = document.getElementById('contactMessage');
+                    
+                    if (!nameEl || !emailEl || !messageEl) {
+                        showToast('Form elements not found.', 'error');
+                        return;
+                    }
+                    
+                    const name = nameEl.value?.trim();
+                    const email = emailEl.value?.trim();
+                    const message = messageEl.value?.trim();
                     
                     if (!name || !email || !message) {
                         showToast('Please fill in all required fields.', 'warning');
                         return;
                     }
                     
-                    // Basic email validation
+                    // Input length validation
+                    if (name.length > 100) {
+                        showToast('Name must be less than 100 characters.', 'warning');
+                        return;
+                    }
+                    
+                    if (message.length > 1000) {
+                        showToast('Message must be less than 1000 characters.', 'warning');
+                        return;
+                    }
+                    
+                    // Email validation
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     if (!emailRegex.test(email)) {
                         showToast('Please enter a valid email address.', 'warning');
                         return;
                     }
                     
+                    // Sanitize inputs
+                    const sanitizedName = name.replace(/[<>"'&]/g, '');
+                    const sanitizedMessage = message.replace(/[<>"'&]/g, '');
+                    
                     // Submit contact form to API
                     const request = {
                         type: 'contact',
-                        name: name,
+                        name: sanitizedName,
                         email: email,
-                        message: message
+                        message: sanitizedMessage
                     };
                     
                     await apiClient.createRequest(request);
-                    showToast(`Thank you ${name}! Your message has been sent successfully.`, 'success');
+                    showToast(`Thank you ${sanitizedName}! Your message has been sent successfully.`, 'success');
                     
                     // Reset form
                     this.reset();
@@ -499,24 +596,29 @@ document.addEventListener('DOMContentLoaded', function() {
         serviceButtons.forEach(button => {
             button.addEventListener('click', async function() {
                 try {
-                    const serviceTitle = this.parentElement.querySelector('h3')?.textContent;
-                    const servicePrice = this.parentElement.querySelector('.service-price')?.textContent;
+                    const serviceTitle = this.parentElement.querySelector('h3')?.textContent?.trim();
+                    const servicePrice = this.parentElement.querySelector('.service-price')?.textContent?.trim();
                     
                     if (!serviceTitle || !servicePrice) {
                         console.error('Could not find service details');
+                        showToast('Service information not available.', 'error');
                         return;
                     }
+                    
+                    // Sanitize service data
+                    const sanitizedTitle = serviceTitle.replace(/[<>"'&]/g, '');
+                    const sanitizedPrice = servicePrice.replace(/[<>"'&]/g, '');
                     
                     // Submit service request to API
                     const request = {
                         type: 'service',
                         user: getCurrentUser() || 'Guest User',
                         email: getCurrentUserEmail() || 'guest@example.com',
-                        details: `Service request: ${serviceTitle} - ${servicePrice}`
+                        details: `Service request: ${sanitizedTitle} - ${sanitizedPrice}`
                     };
                     
                     await apiClient.createRequest(request);
-                    showToast(`${serviceTitle} service request submitted! Admin will contact you soon.`, 'success');
+                    showToast(`${sanitizedTitle} service request submitted! Admin will contact you soon.`, 'success');
                 } catch (error) {
                     console.error('Error handling service button click:', error);
                     showToast('There was an error processing your service request. Please try again.', 'error');
@@ -567,40 +669,47 @@ function initializeRevealAnimations() {
     sections.forEach(section => observer.observe(section));
 }
 
-// Initialize reveal animations
-document.addEventListener('DOMContentLoaded', initializeRevealAnimations);
+// Initialize reveal animations with performance check
+document.addEventListener('DOMContentLoaded', () => {
+    // Check for reduced motion preference
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        initializeRevealAnimations();
+    }
+});
 
-// Add dynamic glow effect to buttons
+// Add dynamic glow effect to buttons with performance optimization
 function addGlowEffect() {
+    // Check if user prefers reduced motion
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        return;
+    }
+    
     const buttons = document.querySelectorAll('.btn-primary, .btn-secondary, .service-btn, .dashboard-btn');
     
-    buttons.forEach(button => {
-        button.addEventListener('mouseenter', function() {
-            this.style.boxShadow = '0 5px 15px rgba(255, 255, 255, 0.2)';
-        });
-        
-        button.addEventListener('mouseleave', function() {
-            this.style.boxShadow = '';
-        });
+    // Use event delegation for better performance
+    document.addEventListener('mouseover', function(e) {
+        if (e.target.matches('.btn-primary, .btn-secondary, .service-btn, .dashboard-btn')) {
+            e.target.style.boxShadow = '0 5px 15px rgba(255, 255, 255, 0.2)';
+        }
+    });
+    
+    document.addEventListener('mouseout', function(e) {
+        if (e.target.matches('.btn-primary, .btn-secondary, .service-btn, .dashboard-btn')) {
+            e.target.style.boxShadow = '';
+        }
     });
 }
 
-// Initialize glow effects
-document.addEventListener('DOMContentLoaded', addGlowEffect);
+// Initialize glow effects with performance check
+document.addEventListener('DOMContentLoaded', () => {
+    // Defer non-critical animations
+    requestIdleCallback(() => {
+        addGlowEffect();
+    }, { timeout: 2000 });
+});
 
-// Performance optimization - throttle scroll events
-function throttle(func, limit) {
-    let inThrottle;
-    return function() {
-        const args = arguments;
-        const context = this;
-        if (!inThrottle) {
-            func.apply(context, args);
-            inThrottle = true;
-            setTimeout(() => inThrottle = false, limit);
-        }
-    }
-}
+// Performance optimization - use existing throttle from PerformanceUtils
+// Removed duplicate throttle function - using PerformanceUtils.throttle instead
 
 // Removed scroll event listener - now using Intersection Observer
 
